@@ -2,6 +2,7 @@
 using AzureStorage.Migrations.Runner.Storage;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -26,7 +27,7 @@ namespace AzureStorage.Migrations.Runner
             {
                 var executedMigrations = await storage.ReadAsync();
 
-                var migrationsToExecute = FindMigrationsToExecute(executedMigrations, tags);
+                var migrationsToExecute = FindMigrationsToExecute(executedMigrations, tags).ToList();
                 await ExecuteAsync(migrationsToExecute, context);
                 executedMigrations = AddExecutedMigrations(executedMigrations, migrationsToExecute);
 
@@ -45,12 +46,17 @@ namespace AzureStorage.Migrations.Runner
             return migrationsToExecute;
         }
 
-        private async Task ExecuteAsync(IEnumerable<MigrationDefinition> migrations, MigrationContext context)
+        private async Task ExecuteAsync(IReadOnlyList<MigrationDefinition> migrations, MigrationContext context)
         {
+            Trace.TraceInformation($"Starting execution of {migrations.Count} migrations.");
+
             foreach (var definition in migrations.OrderBy(x => x.Version))
             {
+                Trace.TraceInformation($"Executing migration {definition.Migration.GetType()}.");
                 await definition.Migration.ExecuteAsync(context);
             }
+
+            Trace.TraceInformation($"Done.");
         }
 
         private ExecutedMigrationCollection AddExecutedMigrations(ExecutedMigrationCollection executedMigrations, IEnumerable<MigrationDefinition> migrationsToExecute)
