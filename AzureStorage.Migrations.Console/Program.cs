@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AzureStorage.Migrations.Core;
 using AzureStorage.Migrations.Storage.AzureBlob;
 using AzureStorage.Migrations.Runner;
+using System.IO;
 
 namespace AzureStorage.Migrations.Console
 {
@@ -26,7 +27,7 @@ namespace AzureStorage.Migrations.Console
             var storage = new AzureBlobStorage(blob);
             await storage.CreateIfNotExistsAsync();
 
-            var assembly = Assembly.LoadFile(settings.Assembly);
+            var assembly = Assembly.LoadFile(Path.GetFullPath(settings.Assembly));
             var runner = new MigrationRunner(
                 storage,
                 new DefaultMigrationFinder(
