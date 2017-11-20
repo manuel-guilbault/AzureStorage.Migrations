@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>manuel.guilbault@gmail.com</authors>
+    <owners>manuel.guilbault@gmail.com</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Migration tool for Azure Storage.</description>
+    <copyright>Copyright 2017</copyright>
+  </metadata>
+  <files>
+    <file src="..\AzureStorage.Migrations.Console\bin\Release\**\*.*" target="tools" />
+  </files>
+</package>
