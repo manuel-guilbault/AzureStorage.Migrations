@@ -15,7 +15,11 @@ namespace AzureStorage.Migrations.Core
         public string Tags { get; set; }
 
         public string[] GetTags()
-            => Tags?.Split(',').Select(x => x.Trim()).Where(x => x != "").ToArray()
+            => Tags?
+                .Split(',')
+                .Select(x => x.Trim().ToLowerInvariant())
+                .Where(x => x != "")
+                .ToArray()
                 ?? new string[0];
     }
 }
