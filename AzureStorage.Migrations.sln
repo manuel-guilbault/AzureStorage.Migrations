@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.16
+VisualStudioVersion = 15.0.27130.2024
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureStorage.Migrations.Core", "AzureStorage.Migrations.Core\AzureStorage.Migrations.Core.csproj", "{B6E74AA9-7B37-4121-AFA0-733DBE4799C6}"
 EndProject
@@ -10,6 +10,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureStorage.Migrations.Runner", "AzureStorage.Migrations.Runner\AzureStorage.Migrations.Runner.csproj", "{6A85AF22-22E9-40E0-9418-4657436E94BD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureStorage.Migrations.Storage.AzureBlob", "AzureStorage.Migrations.Storage.AzureBlob\AzureStorage.Migrations.Storage.AzureBlob.csproj", "{4EF71025-995A-441B-BA50-A96EDA3F743E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{E593FC03-0502-44BB-9CAD-B50164D1FD58}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureStorage.Migrations.Console.Tests", "AzureStorage.Migrations.Console.Tests\AzureStorage.Migrations.Console.Tests.csproj", "{3D37C256-4946-4C11-977C-0D191BDD1856}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,9 +37,16 @@ Global
 		{4EF71025-995A-441B-BA50-A96EDA3F743E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4EF71025-995A-441B-BA50-A96EDA3F743E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4EF71025-995A-441B-BA50-A96EDA3F743E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D37C256-4946-4C11-977C-0D191BDD1856}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D37C256-4946-4C11-977C-0D191BDD1856}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D37C256-4946-4C11-977C-0D191BDD1856}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D37C256-4946-4C11-977C-0D191BDD1856}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{3D37C256-4946-4C11-977C-0D191BDD1856} = {E593FC03-0502-44BB-9CAD-B50164D1FD58}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1B40F724-F15F-470C-A6CC-E4641A391643}
