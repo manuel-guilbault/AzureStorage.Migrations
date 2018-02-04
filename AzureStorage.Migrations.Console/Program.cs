@@ -21,19 +21,10 @@ namespace AzureStorage.Migrations.Console
             var settings = ParseSettings(args);
 
             var storageAccount = CloudStorageAccount.Parse(settings.ConnectionString);
-            var context = new MigrationContext(storageAccount);
+            var context = new MigrationContext(storageAccount, settings.Tags, settings.Properties);
 
-            var blob = await CreateBlobAsync(context.BlobClient, settings);
-            var storage = new AzureBlobStorage(blob);
-            await storage.CreateIfNotExistsAsync();
-
-            var assembly = Assembly.LoadFile(Path.GetFullPath(settings.Assembly));
-            var runner = new MigrationRunner(
-                storage,
-                new DefaultMigrationFinder(
-                    new DefaultMigrationFactory(),
-                    assembly));
-            await runner.RunAsync(context, settings.Tags);
+            var runner = await CreateRunnerAsync(settings, context);
+            await runner.RunAsync(context);
         }
 
         private static Settings ParseSettings(string[] args)
@@ -43,12 +34,26 @@ namespace AzureStorage.Migrations.Console
             return settings;
         }
 
-        private static async Task<CloudBlockBlob> CreateBlobAsync(CloudBlobClient blobClient, Settings settings)
+        private static async Task<MigrationRunner> CreateRunnerAsync(Settings settings, MigrationContext context)
         {
-            var storageContainer = blobClient.GetContainerReference(settings.Container);
-            await storageContainer.CreateIfNotExistsAsync();
+            var blob = GetBlob(context.BlobClient, settings);
+            var storage = new AzureBlobStorage(blob);
+            await storage.CreateIfNotExistsAsync();
 
-            var blob = storageContainer.GetBlockBlobReference(settings.Blob);
+            var assembly = Assembly.LoadFile(Path.GetFullPath(settings.Assembly));
+
+            var runner = new MigrationRunner(
+                storage,
+                new DefaultMigrationFinder(
+                    new DefaultMigrationFactory(),
+                    assembly));
+            return runner;
+        }
+
+        private static CloudBlockBlob GetBlob(CloudBlobClient blobClient, Settings settings)
+        {
+            var container = blobClient.GetContainerReference(settings.Container);
+            var blob = container.GetBlockBlobReference(settings.Blob);
             return blob;
         }
     }

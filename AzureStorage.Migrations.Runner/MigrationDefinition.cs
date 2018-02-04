@@ -1,4 +1,5 @@
 ﻿using AzureStorage.Migrations.Core;
+using AzureStorage.Migrations.Runner.Storage;
 using System;
 using System.Linq;
 
@@ -19,5 +20,8 @@ namespace AzureStorage.Migrations.Runner
 
         public bool Matches(params string[] tags)
             => tags == null || tags.Length == 0 || tags.All(x => this.Tags.Contains(x));
+
+        public ExecutedMigration AsExecuted()
+            => new ExecutedMigration(Version, DateTime.Now);
     }
 }

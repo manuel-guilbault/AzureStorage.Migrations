@@ -16,15 +16,22 @@ namespace AzureStorage.Migrations.Storage.AzureBlob
         private static readonly JsonSerializerSettings jsonSerializerSettings = new JsonSerializerSettings();
 
         private readonly CloudBlockBlob blob;
-        private string leaseId;
+        private AzureBlobLease lease;
 
         public AzureBlobStorage(CloudBlockBlob blob)
         {
             this.blob = blob ?? throw new ArgumentNullException(nameof(blob));
         }
 
+        private bool IsLocked => lease != null && !lease.IsReleased;
+
         public async Task CreateIfNotExistsAsync()
         {
+            await blob.Container.CreateIfNotExistsAsync(
+                BlobContainerPublicAccessType.Off,
+                new BlobRequestOptions(),
+                new OperationContext());
+
             var exists = await blob.ExistsAsync();
             if (!exists)
             {
@@ -38,21 +45,29 @@ namespace AzureStorage.Migrations.Storage.AzureBlob
                 catch (StorageException e)
                     when (e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.PreconditionFailed)
                 {
+                    // Blob was created by someone else after the call to ExistsAsync(), 
+                    // so just ignore the exception.
                 }
             }
         }
 
         public async Task<IDisposable> LockAsync()
         {
-            leaseId = await blob.AcquireLeaseAsync(null);
-            return new AzureBlobLease(blob, leaseId);
+            if (IsLocked)
+            {
+                throw new InvalidOperationException($"Storage is already locked.");
+            }
+
+            var leaseId = await blob.AcquireLeaseAsync(null);
+            lease = new AzureBlobLease(blob, leaseId);
+            return lease;
         }
 
         public async Task<ExecutedMigrationCollection> ReadAsync()
         {
             var json = await blob.DownloadTextAsync(
                 encoding,
-                AccessCondition.GenerateLeaseCondition(leaseId),
+                CreateLeasedAccessCondition(),
                 new BlobRequestOptions(),
                 new OperationContext());
             var result = JsonConvert.DeserializeObject<ExecutedMigrationCollection>(json, jsonSerializerSettings);
@@ -63,8 +78,13 @@ namespace AzureStorage.Migrations.Storage.AzureBlob
         {
             await WriteAsync(
                 executedMigrations,
-                AccessCondition.GenerateLeaseCondition(leaseId));
+                CreateLeasedAccessCondition());
         }
+
+        private AccessCondition CreateLeasedAccessCondition()
+            => IsLocked
+                ? AccessCondition.GenerateLeaseCondition(lease.LeaseId)
+                : AccessCondition.GenerateEmptyCondition();
 
         private async Task WriteAsync(ExecutedMigrationCollection executedMigrations, AccessCondition accessCondition)
         {

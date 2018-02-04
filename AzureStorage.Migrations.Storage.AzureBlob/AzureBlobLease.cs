@@ -7,21 +7,22 @@ namespace AzureStorage.Migrations.Storage.AzureBlob
     public class AzureBlobLease : IDisposable
     {
         private readonly CloudBlob blob;
-        private readonly string leaseId;
-        private bool isReleased = false;
 
         public AzureBlobLease(CloudBlob blob, string leaseId)
         {
             this.blob = blob ?? throw new ArgumentNullException(nameof(blob));
-            this.leaseId = leaseId ?? throw new ArgumentNullException(nameof(leaseId));
+            this.LeaseId = leaseId ?? throw new ArgumentNullException(nameof(leaseId));
         }
+
+        public string LeaseId { get; }
+        public bool IsReleased { get; private set; } = false;
 
         public void Dispose()
         {
-            if (!isReleased)
+            if (!IsReleased)
             {
-                blob.ReleaseLease(AccessCondition.GenerateLeaseCondition(leaseId));
-                isReleased = true;
+                blob.ReleaseLease(AccessCondition.GenerateLeaseCondition(LeaseId));
+                IsReleased = true;
             }
         }
     }

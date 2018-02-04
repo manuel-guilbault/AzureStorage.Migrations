@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 
 namespace AzureStorage.Migrations.Console
@@ -11,6 +12,7 @@ namespace AzureStorage.Migrations.Console
         private const string containerSwitch = "-c";
         private const string blobSwitch = "-b";
         private const string tagsSwitch = "-t";
+        private const string propertiesSwitch = "-p";
 
         private Stack<string> tokens;
         private string assembly;
@@ -18,6 +20,7 @@ namespace AzureStorage.Migrations.Console
         private string container;
         private string blob;
         private List<string> tags;
+        private IDictionary<string, string> properties;
 
         public Settings Parse(string[] values)
         {
@@ -27,6 +30,7 @@ namespace AzureStorage.Migrations.Console
             container = "migrations";
             blob = "default";
             tags = new List<string>();
+            properties = new Dictionary<string, string>();
 
             while (tokens.Count > 0)
             {
@@ -53,6 +57,10 @@ namespace AzureStorage.Migrations.Console
                         ReadTags();
                         break;
 
+                    case propertiesSwitch:
+                        ReadProperties();
+                        break;
+
                     default:
                         throw new Exception($"Unknown argument {@switch}.");
                 }
@@ -63,7 +71,7 @@ namespace AzureStorage.Migrations.Console
             if (container == null) { throw new Exception($"The {containerSwitch} argument is required."); }
             if (blob == null) { throw new Exception($"The {blobSwitch} argument is required."); }
 
-            return new Settings(assembly, connectionString, container, blob, tags.ToArray());
+            return new Settings(assembly, connectionString, container, blob, tags.ToArray(), properties);
         }
 
         private void ReadAssembly()
@@ -116,6 +124,26 @@ namespace AzureStorage.Migrations.Console
             while (tokens.Count > 0 && !tokens.Peek().StartsWith("-"))
             {
                 tags.Add(tokens.Pop());
+            }
+        }
+
+        private void ReadProperties()
+        {
+            if (tokens.Count == 0)
+            {
+                throw new Exception($"The {propertiesSwitch} argument must be followed by one or more property definition.");
+            }
+
+            while (tokens.Count > 0 && !tokens.Peek().StartsWith("-"))
+            {
+                var raw = tokens.Pop();
+                var parts = raw.Split(new[] { '=' }, 2);
+                if (parts.Length < 2)
+                {
+                    throw new Exception($"Properties must have the following format: 'name=value'.");
+                }
+
+                properties.Add(parts[0], parts[1]);
             }
         }
     }

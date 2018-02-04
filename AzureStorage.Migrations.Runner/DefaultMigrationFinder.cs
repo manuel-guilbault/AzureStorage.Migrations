@@ -36,6 +36,8 @@ namespace AzureStorage.Migrations.Runner
                 .Except(misconfigured)
                 .Select(x => CreateDefinition(x.migrationAttribute, x.type))
                 .ToList();
+
+            AssertNoDuplicates(results);
             return results;
         }
 
@@ -46,6 +48,27 @@ namespace AzureStorage.Migrations.Runner
                 attribute.Version,
                 attribute.GetTags(),
                 migration);
+        }
+
+        private void AssertNoDuplicates(IEnumerable<MigrationDefinition> migrations)
+        {
+            var duplicates = migrations
+                .GroupBy(x => x.Version)
+                .Where(x => x.Skip(1).Any())
+                .ToList();
+            if (duplicates.Count == 0)
+            {
+                var message = "Multiple migrations found with the same version number:\n"
+                    + string.Join("\n", duplicates.Select(d => formatDuplicates(d.Key, d)));
+                throw new MigrationException(message);
+
+
+                string formatDuplicates(int version, IEnumerable<MigrationDefinition> definitions)
+                    => $"  Version {version}:\n{string.Join("\n", definitions.Select(formatDuplicate))}";
+
+                string formatDuplicate(MigrationDefinition definition)
+                    => $"    {definition.Migration.GetType()}";
+            }
         }
     }
 }

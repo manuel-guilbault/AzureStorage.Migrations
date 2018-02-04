@@ -32,6 +32,9 @@ namespace AzureStorage.Migrations.Runner.Storage
             this.migrations = migrations.ToList();
         }
 
+        public ExecutedMigrationCollection MergeWith(ExecutedMigration migration)
+            => MergeWith(new[] { migration });
+
         public ExecutedMigrationCollection MergeWith(IEnumerable<ExecutedMigration> otherMigrations)
             => new ExecutedMigrationCollection(migrations.Concat(otherMigrations));
         

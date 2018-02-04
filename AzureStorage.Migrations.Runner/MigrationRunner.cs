@@ -1,7 +1,6 @@
 ﻿using AzureStorage.Migrations.Core;
 using AzureStorage.Migrations.Runner.Storage;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -19,53 +18,28 @@ namespace AzureStorage.Migrations.Runner
             this.finder = finder ?? throw new ArgumentNullException(nameof(finder));
         }
 
-        public async Task RunAsync(MigrationContext context, params string[] tags)
+        public async Task RunAsync(MigrationContext context)
         {
-            if (tags == null) { throw new ArgumentNullException(nameof(tags)); }
+            var migrationDefinitions = finder.FindMigrations();
 
             using (await storage.LockAsync())
             {
                 var executedMigrations = await storage.ReadAsync();
+                var migrationsToExecute = migrationDefinitions.FindMigrationsToExecute(
+                    executedMigrations, 
+                    context.Tags);
 
-                var migrationsToExecute = FindMigrationsToExecute(executedMigrations, tags).ToList();
-                await ExecuteAsync(migrationsToExecute, context);
-                executedMigrations = AddExecutedMigrations(executedMigrations, migrationsToExecute);
+                Trace.TraceInformation($"Starting execution of {migrationsToExecute.Count} migrations.");
+                foreach (var definition in migrationsToExecute.OrderBy(x => x.Version))
+                {
+                    Trace.TraceInformation($"Executing migration #{definition.Version} ({definition.Migration.GetType()}).");
+                    await definition.Migration.ExecuteAsync(context);
 
-                await storage.WriteAsync(executedMigrations);
+                    executedMigrations = executedMigrations.MergeWith(definition.AsExecuted());
+                    await storage.WriteAsync(executedMigrations);
+                }
+                Trace.TraceInformation($"Done.");
             }
-        }
-
-        private IEnumerable<MigrationDefinition> FindMigrationsToExecute(ExecutedMigrationCollection executedMigrations, string[] tags)
-        {
-            var migrations = finder.FindMigrations();
-
-            var migrationsToExecute = migrations
-                .Where(m => !executedMigrations.Any(em => em.Version == m.Version))
-                .Where(m => m.Matches(tags))
-                .ToList();
-            return migrationsToExecute;
-        }
-
-        private async Task ExecuteAsync(IReadOnlyList<MigrationDefinition> migrations, MigrationContext context)
-        {
-            Trace.TraceInformation($"Starting execution of {migrations.Count} migrations.");
-
-            foreach (var definition in migrations.OrderBy(x => x.Version))
-            {
-                Trace.TraceInformation($"Executing migration {definition.Migration.GetType()}.");
-                await definition.Migration.ExecuteAsync(context);
-            }
-
-            Trace.TraceInformation($"Done.");
-        }
-
-        private ExecutedMigrationCollection AddExecutedMigrations(ExecutedMigrationCollection executedMigrations, IEnumerable<MigrationDefinition> migrationsToExecute)
-        {
-            var newlyExecutedMigrations = migrationsToExecute
-                    .GroupBy(x => x.Version)
-                    .Select(x => new ExecutedMigration(x.Key, DateTime.Now))
-                    .ToList();
-            return executedMigrations.MergeWith(newlyExecutedMigrations);
         }
     }
 }
