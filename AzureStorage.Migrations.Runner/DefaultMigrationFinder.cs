@@ -56,7 +56,7 @@ namespace AzureStorage.Migrations.Runner
                 .GroupBy(x => x.Version)
                 .Where(x => x.Skip(1).Any())
                 .ToList();
-            if (duplicates.Count == 0)
+            if (duplicates.Count > 0)
             {
                 var message = "Multiple migrations found with the same version number:\n"
                     + string.Join("\n", duplicates.Select(d => formatDuplicates(d.Key, d)));
