@@ -5,6 +5,7 @@ using Microsoft.WindowsAzure.Storage;
 
 namespace AzureStorage.Migrations.Core
 {
+    [Obsolete("DynamicTableEntity should be used instread.")]
     public class TableRow : ITableEntity
     {
         private IDictionary<string, EntityProperty> properties;
