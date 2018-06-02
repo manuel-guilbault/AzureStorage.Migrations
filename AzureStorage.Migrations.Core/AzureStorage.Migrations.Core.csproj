@@ -61,6 +61,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CloudBlobExtensions.cs" />
     <Compile Include="CloudTableExtensions.cs" />
     <Compile Include="IMigration.cs" />
     <Compile Include="MigrationAttribute.cs" />
