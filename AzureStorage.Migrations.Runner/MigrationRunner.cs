@@ -3,6 +3,7 @@ using AzureStorage.Migrations.Runner.Storage;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AzureStorage.Migrations.Runner
@@ -18,15 +19,15 @@ namespace AzureStorage.Migrations.Runner
             this.finder = finder ?? throw new ArgumentNullException(nameof(finder));
         }
 
-        public async Task RunAsync(MigrationContext context)
+        public async Task RunAsync(MigrationContext context, CancellationToken cancellationToken = default)
         {
-            var migrationDefinitions = finder.FindMigrations();
+            var migrationDefinitions = await finder.FindMigrationsAsync(cancellationToken);
 
-            using (await storage.LockAsync())
+            await storage.RunWithLeaseAsync(async (leasedStorage) =>
             {
-                var executedMigrations = await storage.ReadAsync();
+                var executedMigrations = await leasedStorage.ReadAsync(cancellationToken);
                 var migrationsToExecute = migrationDefinitions.FindMigrationsToExecute(
-                    executedMigrations, 
+                    executedMigrations,
                     context.Tags);
 
                 Trace.TraceInformation($"Starting execution of {migrationsToExecute.Count} migrations.");
@@ -36,10 +37,12 @@ namespace AzureStorage.Migrations.Runner
                     await definition.Migration.ExecuteAsync(context);
 
                     executedMigrations = executedMigrations.MergeWith(definition.AsExecuted());
-                    await storage.WriteAsync(executedMigrations);
+                    await leasedStorage.WriteAsync(executedMigrations);
+
+                    cancellationToken.ThrowIfCancellationRequested();
                 }
                 Trace.TraceInformation($"Done.");
-            }
+            }, cancellationToken);
         }
     }
 }

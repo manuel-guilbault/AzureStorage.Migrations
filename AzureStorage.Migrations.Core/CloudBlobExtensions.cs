@@ -1,12 +1,17 @@
-﻿using Microsoft.WindowsAzure.Storage.Blob;
+﻿using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Blob;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AzureStorage.Migrations.Core
 {
     public static class CloudBlobExtensions
     {
-        public static async Task ForEachAsync<T>(this CloudBlobContainer container, Func<T, Task> action)
+        public static async Task ForEachAsync<T>(
+            this CloudBlobContainer container, 
+            Func<T, Task> action, 
+            CancellationToken cancellationToken = default)
             where T : class, IListBlobItem
             => await container.ForEachAsync(async item =>
             {
@@ -15,9 +20,12 @@ namespace AzureStorage.Migrations.Core
                 {
                     await action(typedItem);
                 }
-            });
+            }, cancellationToken);
 
-        public static async Task ForEachAsync<T>(this CloudBlobContainer container, Action<T> action)
+        public static async Task ForEachAsync<T>(
+            this CloudBlobContainer container,
+            Action<T> action, 
+            CancellationToken cancellationToken = default)
             where T : class, IListBlobItem
             => await container.ForEachAsync(item =>
             {
@@ -26,31 +34,49 @@ namespace AzureStorage.Migrations.Core
                 {
                     action(typedItem);
                 }
-            });
+            }, cancellationToken);
 
-        public static async Task ForEachAsync(this CloudBlobContainer container, Action<IListBlobItem> action)
+        public static async Task ForEachAsync(
+            this CloudBlobContainer container, 
+            Action<IListBlobItem> action, 
+            CancellationToken cancellationToken = default)
             => await container.ForEachAsync(item =>
             {
                 action(item);
                 return Task.CompletedTask;
-            });
+            }, cancellationToken);
 
-        public static async Task ForEachAsync(this CloudBlobContainer container, Func<IListBlobItem, Task> action)
+        public static async Task ForEachAsync(
+            this CloudBlobContainer container, 
+            Func<IListBlobItem, Task> action, 
+            CancellationToken cancellationToken = default)
         {
             BlobContinuationToken continuationToken = null;
             do
             {
-                var response = await container.ListBlobsSegmentedAsync(continuationToken);
+                var response = await container.ListBlobsSegmentedAsync(
+                    "",
+                    false,
+                    new BlobListingDetails(),
+                    null,
+                    continuationToken,
+                    new BlobRequestOptions(),
+                    new OperationContext(),
+                    cancellationToken);
                 continuationToken = response.ContinuationToken;
                 foreach (var item in response.Results)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     await action(item);
                 }
             }
             while (continuationToken != null);
         }
 
-        public static async Task ForEachAsync<T>(this CloudBlobDirectory directory, Action<T> action)
+        public static async Task ForEachAsync<T>(
+            this CloudBlobDirectory directory, 
+            Action<T> action, 
+            CancellationToken cancellationToken = default)
             where T : class, IListBlobItem
             => await directory.ForEachAsync(item =>
             {
@@ -59,9 +85,12 @@ namespace AzureStorage.Migrations.Core
                 {
                     action(typedItem);
                 }
-            });
+            }, cancellationToken);
 
-        public static async Task ForEachAsync<T>(this CloudBlobDirectory directory, Func<T, Task> action)
+        public static async Task ForEachAsync<T>(
+            this CloudBlobDirectory directory, 
+            Func<T, Task> action, 
+            CancellationToken cancellationToken = default)
             where T : class, IListBlobItem
             => await directory.ForEachAsync(async item =>
             {
@@ -70,24 +99,38 @@ namespace AzureStorage.Migrations.Core
                 {
                     await action(typedItem);
                 }
-            });
+            }, cancellationToken);
 
-        public static async Task ForEachAsync(this CloudBlobDirectory directory, Action<IListBlobItem> action)
+        public static async Task ForEachAsync(
+            this CloudBlobDirectory directory, 
+            Action<IListBlobItem> action, 
+            CancellationToken cancellationToken = default)
             => await directory.ForEachAsync(item =>
             {
                 action(item);
                 return Task.CompletedTask;
-            });
+            }, cancellationToken);
 
-        public static async Task ForEachAsync(this CloudBlobDirectory directory, Func<IListBlobItem, Task> action)
+        public static async Task ForEachAsync(
+            this CloudBlobDirectory directory, 
+            Func<IListBlobItem, Task> action, 
+            CancellationToken cancellationToken = default)
         {
             BlobContinuationToken continuationToken = null;
             do
             {
-                var response = await directory.ListBlobsSegmentedAsync(continuationToken);
+                var response = await directory.ListBlobsSegmentedAsync(
+                    false,
+                    new BlobListingDetails(),
+                    null,
+                    continuationToken,
+                    new BlobRequestOptions(),
+                    new OperationContext(),
+                    cancellationToken);
                 continuationToken = response.ContinuationToken;
                 foreach (var item in response.Results)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     await action(item);
                 }
             }

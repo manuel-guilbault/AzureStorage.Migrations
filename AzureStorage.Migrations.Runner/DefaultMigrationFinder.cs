@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace AzureStorage.Migrations.Runner
 {
@@ -17,7 +19,7 @@ namespace AzureStorage.Migrations.Runner
             this.assemblies = assemblies ?? throw new ArgumentNullException(nameof(assemblies));
         }
 
-        public IEnumerable<MigrationDefinition> FindMigrations()
+        public async Task<IEnumerable<MigrationDefinition>> FindMigrationsAsync(CancellationToken cancellationToken = default)
         {
             var candidates = (
                 from assembly in assemblies
@@ -32,18 +34,21 @@ namespace AzureStorage.Migrations.Runner
                 .ToList();
             //TODO warn misconfigured
 
-            var results = candidates
-                .Except(misconfigured)
-                .Select(x => CreateDefinition(x.migrationAttribute, x.type))
-                .ToList();
+            var results = await Task.WhenAll(
+                candidates
+                    .Except(misconfigured)
+                    .Select(x => CreateDefinitionAsync(x.migrationAttribute, x.type, cancellationToken)));
 
             AssertNoDuplicates(results);
             return results;
         }
 
-        private MigrationDefinition CreateDefinition(MigrationAttribute attribute, Type @type)
+        private async Task<MigrationDefinition> CreateDefinitionAsync(
+            MigrationAttribute attribute, 
+            Type @type,
+            CancellationToken cancellationToken)
         {
-            var migration = migrationFactory.Create(type);
+            var migration = await migrationFactory.CreateAsync(type, cancellationToken);
             return new MigrationDefinition(
                 attribute.Version,
                 attribute.GetTags(),

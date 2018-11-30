@@ -1,11 +1,11 @@
-﻿using NFluent;
+using NFluent;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
 namespace AzureStorage.Migrations.Console.Tests
 {
-    public class SettingsParserTest
+    public class SettingsParserTests
     {
         [Fact]
         public void Should_Parse()
@@ -22,9 +22,8 @@ namespace AzureStorage.Migrations.Console.Tests
             };
 
             var command = $"-a {assembly} -cs {connectionString} -c {container} -b {blob} -t {string.Join(" ", tags)} -p {string.Join(" ", properties.Select(x => $"{x.Key}={x.Value}"))}";
-
-            var sut = new SettingsParser();
-            var result = sut.Parse(command.Split(' '));
+            
+            var result = SettingsParser.Parse(command.Split(' '));
 
             Check.That(result.Assembly).Equals(assembly);
             Check.That(result.ConnectionString).Equals(connectionString);

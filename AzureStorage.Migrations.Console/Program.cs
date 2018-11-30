@@ -1,62 +1,78 @@
-﻿using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
+﻿using AzureStorage.Migrations.Core;
+using AzureStorage.Migrations.Runner;
+using AzureStorage.Migrations.Storage.AzureBlob;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.WindowsAzure.Storage;
+using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
-using AzureStorage.Migrations.Core;
-using AzureStorage.Migrations.Storage.AzureBlob;
-using AzureStorage.Migrations.Runner;
-using System.IO;
 
 namespace AzureStorage.Migrations.Console
 {
-    static class Program
+    class Program
     {
-        static void Main(params string[] args)
+        static async Task Main(string[] args)
         {
-            MainAsync(args).GetAwaiter().GetResult();
+            var hostBuilder = new HostBuilder()
+                .ConfigureAppConfiguration((hostingContext, config) =>
+                {
+                    config.AddEnvironmentVariables();
+                })
+                .ConfigureServices((hostContext, services) =>
+                {
+                    var settings = SettingsParser.Parse(args);
+
+                    services
+                        .AddScoped(_ => CloudStorageAccount.Parse(settings.ConnectionString))
+                        .AddScoped(p => new MigrationContext(
+                            p.GetRequiredService<CloudStorageAccount>(),
+                            settings.Tags,
+                            settings.Properties))
+                        .AddScoped(p =>
+                        {
+                            var context = p.GetRequiredService<MigrationContext>();
+                            var container = context.BlobClient.GetContainerReference(settings.Container);
+                            var blob = container.GetBlockBlobReference(settings.Blob);
+                            var storage = new AzureBlobStorage(blob);
+
+                            var assembly = LoadAssembly(settings.Assembly);
+
+                            return new MigrationRunner(
+                                storage,
+                                new DefaultMigrationFinder(
+                                    new DefaultMigrationFactory(),
+                                    assembly));
+                        })
+                    ;
+                })
+                .ConfigureLogging((hostingContext, logging) =>
+                {
+                    logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
+                    logging.AddConsole();
+                })
+                .UseConsoleLifetime()
+            ;
+
+            using (var host = hostBuilder.Build())
+            {
+                var applicationLifetime = host.Services.GetRequiredService<IApplicationLifetime>();
+                await host.StartAsync();
+
+                using (var scope = host.Services.CreateScope())
+                {
+                    var runner = host.Services.GetRequiredService<MigrationRunner>();
+                    var context = host.Services.GetRequiredService<MigrationContext>();
+
+                    await runner.RunAsync(context, applicationLifetime.ApplicationStopping);
+                }
+
+                await host.StopAsync();
+            }
         }
-
-        static async Task MainAsync(params string[] args)
-        {
-            var settings = ParseSettings(args);
-
-            var storageAccount = CloudStorageAccount.Parse(settings.ConnectionString);
-            var context = new MigrationContext(storageAccount, settings.Tags, settings.Properties);
-
-            var runner = await CreateRunnerAsync(settings, context);
-            await runner.RunAsync(context);
-        }
-
-        private static Settings ParseSettings(string[] args)
-        {
-            var parser = new SettingsParser();
-            var settings = parser.Parse(args);
-            return settings;
-        }
-
-        private static async Task<MigrationRunner> CreateRunnerAsync(Settings settings, MigrationContext context)
-        {
-            var blob = GetBlob(context.BlobClient, settings);
-            var storage = new AzureBlobStorage(blob);
-            await storage.CreateIfNotExistsAsync();
-
-            var assembly = LoadAssembly(settings.Assembly);
-
-            var runner = new MigrationRunner(
-                storage,
-                new DefaultMigrationFinder(
-                    new DefaultMigrationFactory(),
-                    assembly));
-            return runner;
-        }
-
-        private static CloudBlockBlob GetBlob(CloudBlobClient blobClient, Settings settings)
-        {
-            var container = blobClient.GetContainerReference(settings.Container);
-            var blob = container.GetBlockBlobReference(settings.Blob);
-            return blob;
-        }
-
+        
         private static Assembly LoadAssembly(string assemblyPath)
         {
             var assemblyAbsolutePath = Path.GetFullPath(assemblyPath);

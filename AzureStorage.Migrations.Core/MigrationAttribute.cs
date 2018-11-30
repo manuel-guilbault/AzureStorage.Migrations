@@ -4,7 +4,7 @@ using System.Linq;
 namespace AzureStorage.Migrations.Core
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-    public class MigrationAttribute: Attribute
+    public class MigrationAttribute : Attribute
     {
         public MigrationAttribute(int version)
         {

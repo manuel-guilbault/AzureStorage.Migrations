@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 
 namespace AzureStorage.Migrations.Console
@@ -14,6 +13,11 @@ namespace AzureStorage.Migrations.Console
         private const string tagsSwitch = "-t";
         private const string propertiesSwitch = "-p";
 
+        public static Settings Parse(string[] values)
+        {
+            return new SettingsParser().DoParse(values);
+        }
+
         private Stack<string> tokens;
         private string assembly;
         private string connectionString;
@@ -22,7 +26,7 @@ namespace AzureStorage.Migrations.Console
         private List<string> tags;
         private IDictionary<string, string> properties;
 
-        public Settings Parse(string[] values)
+        private Settings DoParse(string[] values)
         {
             tokens = new Stack<string>(values.Reverse());
             assembly = null;
@@ -120,7 +124,7 @@ namespace AzureStorage.Migrations.Console
             {
                 throw new Exception($"The {tagsSwitch} argument must be followed by one or more tags.");
             }
-            
+
             while (tokens.Count > 0 && !tokens.Peek().StartsWith("-"))
             {
                 tags.Add(tokens.Pop());
