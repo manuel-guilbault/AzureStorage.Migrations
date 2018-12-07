@@ -40,7 +40,7 @@ namespace AzureStorage.Migrations.Console
             var storage = new AzureBlobStorage(blob);
             await storage.CreateIfNotExistsAsync();
 
-            var assembly = Assembly.LoadFile(Path.GetFullPath(settings.Assembly));
+            var assembly = LoadAssembly(settings.Assembly);
 
             var runner = new MigrationRunner(
                 storage,
@@ -55,6 +55,12 @@ namespace AzureStorage.Migrations.Console
             var container = blobClient.GetContainerReference(settings.Container);
             var blob = container.GetBlockBlobReference(settings.Blob);
             return blob;
+        }
+
+        private static Assembly LoadAssembly(string assemblyPath)
+        {
+            var assemblyAbsolutePath = Path.GetFullPath(assemblyPath);
+            return AssemblyLoader.Load(new FileInfo(assemblyAbsolutePath));
         }
     }
 }
