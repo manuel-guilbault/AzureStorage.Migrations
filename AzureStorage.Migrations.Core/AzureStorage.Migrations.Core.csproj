@@ -1,4 +1,5 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\Common.props" />
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -6,7 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />
+    <Content Include="..\AzureStorage.Migrations.Console\bin\$(Configuration)\**\*.*">
+      <Pack>true</Pack>
+      <PackagePath>tools\</PackagePath>
+    </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />
+  </ItemGroup>
+ 
 </Project>
