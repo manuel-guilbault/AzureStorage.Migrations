@@ -134,5 +134,13 @@ namespace AzureStorage.Migrations.Core
                 new TableRequestOptions(),
                 new OperationContext(),
                 cancellationToken);
+
+        public static async Task<bool> DeleteIfExistsAsync(
+            this CloudTable table,
+            CancellationToken cancellationToken)
+            => await table.DeleteIfExistsAsync(
+                new TableRequestOptions(),
+                new OperationContext(),
+                cancellationToken);
     }
 }

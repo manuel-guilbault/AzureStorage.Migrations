@@ -153,5 +153,22 @@ namespace AzureStorage.Migrations.Core
                 new BlobRequestOptions(),
                 new OperationContext(),
                 cancellationToken);
+
+        public static async Task<bool> DeleteIfExistsAsync(
+            this CloudBlobContainer container,
+            CancellationToken cancellationToken)
+            => await container.DeleteIfExistsAsync(
+                AccessCondition.GenerateEmptyCondition(),
+                cancellationToken);
+
+        public static async Task<bool> DeleteIfExistsAsync(
+            this CloudBlobContainer container,
+            AccessCondition accessCondition,
+            CancellationToken cancellationToken)
+            => await container.DeleteIfExistsAsync(
+                accessCondition,
+                new BlobRequestOptions(),
+                new OperationContext(),
+                cancellationToken);
     }
 }
