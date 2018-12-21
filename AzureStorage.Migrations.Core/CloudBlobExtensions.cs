@@ -136,5 +136,22 @@ namespace AzureStorage.Migrations.Core
             }
             while (continuationToken != null);
         }
+
+        public static async Task<bool> CreateIfNotExistsAsync(
+            this CloudBlobContainer container,
+            CancellationToken cancellationToken)
+            => await container.CreateIfNotExistsAsync(
+                BlobContainerPublicAccessType.Off,
+                cancellationToken);
+
+        public static async Task<bool> CreateIfNotExistsAsync(
+            this CloudBlobContainer container,
+            BlobContainerPublicAccessType publicAccessType,
+            CancellationToken cancellationToken)
+            => await container.CreateIfNotExistsAsync(
+                publicAccessType,
+                new BlobRequestOptions(),
+                new OperationContext(),
+                cancellationToken);
     }
 }

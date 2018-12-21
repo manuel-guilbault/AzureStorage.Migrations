@@ -126,5 +126,13 @@ namespace AzureStorage.Migrations.Core
                 && row1.ETag == row2.ETag
                 && row1.Properties.Keys.SequenceEqual(row2.Properties.Keys)
                 && row1.Properties.All(p => Equals(p.Value, row2.Properties[p.Key]));
+
+        public static async Task<bool> CreateIfNotExistsAsync(
+            this CloudTable table,
+            CancellationToken cancellationToken)
+            => await table.CreateIfNotExistsAsync(
+                new TableRequestOptions(),
+                new OperationContext(),
+                cancellationToken);
     }
 }
