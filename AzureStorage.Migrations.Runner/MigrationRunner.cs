@@ -1,7 +1,6 @@
 ﻿using AzureStorage.Migrations.Core;
 using AzureStorage.Migrations.Runner.Storage;
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,10 +29,10 @@ namespace AzureStorage.Migrations.Runner
                     executedMigrations,
                     context.Tags);
 
-                Trace.TraceInformation($"Starting execution of {migrationsToExecute.Count} migrations.");
+                Console.WriteLine($"Starting execution of {migrationsToExecute.Count} migrations.");
                 foreach (var definition in migrationsToExecute.OrderBy(x => x.Version))
                 {
-                    Trace.TraceInformation($"Executing migration #{definition.Version} ({definition.Migration.GetType()}).");
+                    Console.WriteLine($"Executing migration #{definition.Version} ({definition.Migration.GetType()}).");
                     await definition.Migration.ExecuteAsync(context);
 
                     executedMigrations = executedMigrations.MergeWith(definition.AsExecuted());
@@ -41,7 +40,7 @@ namespace AzureStorage.Migrations.Runner
 
                     cancellationToken.ThrowIfCancellationRequested();
                 }
-                Trace.TraceInformation($"Done.");
+                Console.WriteLine($"Done.");
             }, cancellationToken);
         }
     }
